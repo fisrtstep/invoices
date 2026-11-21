@@ -15,7 +15,7 @@ function validateCreate(body) {
     for (const l of lines) {
         if (typeof l.sku !== 'string' || typeof l.description !== 'string') return 'each line needs sku and description';
         if (!Number.isInteger(l.quantity) || l.quantity < 1) return 'each line needs a positive integer quantity';
-        if (typeof l.unitPrice !== 'number' || l.unitPrice < 0) return 'each line needs a non-negative unitPrice';
+        if (!Number.isInteger(l.unitPriceCents) || l.unitPriceCents < 0) return 'each line needs a non-negative integer unitPriceCents';
     }
     return null;
 }
@@ -30,7 +30,7 @@ invoicesRouter.post('', async (req, res, next) => {
         const billTo = await findBillingCustomer(userId);
         if (!billTo) return res.status(422).json({ error: 'Unknown customer' });
 
-        const priced = lines.map((l) => ({ ...l, unitPriceCents: Math.round(l.unitPrice * 100) }));
+        const priced = lines;
         const totalCents = priced.reduce((sum, l) => sum + l.unitPriceCents * l.quantity, 0);
         const invoice = await insertInvoice({ userId, currency, totalCents, billTo, lines: priced });
         res.status(201).json(toInvoiceDto(invoice, await getLines(invoice.id)));
